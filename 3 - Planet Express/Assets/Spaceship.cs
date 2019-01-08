@@ -5,8 +5,13 @@ using UnityEngine;
 
 public class Spaceship : MonoBehaviour {
 
-    Rigidbody rigidBody;
-    AudioSource audioSource;
+    [SerializeField]
+    private float rcsThrust = 250f;
+    [SerializeField]
+    private float mainThrust = 1500f;
+
+    private Rigidbody rigidBody;
+    private AudioSource audioSource;
 
 	// Use this for initialization
 	void Start ()
@@ -24,9 +29,11 @@ public class Spaceship : MonoBehaviour {
 
     private void ApplyThrust()
     {
+        float frameThrust = mainThrust * Time.deltaTime;
+
         if (Input.GetKey(KeyCode.Space))
         {
-            rigidBody.AddRelativeForce(Vector3.up);
+            rigidBody.AddRelativeForce(Vector3.up * frameThrust);
 
             if (!audioSource.isPlaying)
             {
@@ -41,15 +48,16 @@ public class Spaceship : MonoBehaviour {
 
     private void RotateShip()
     {
+        float frameRotation = rcsThrust * Time.deltaTime;
         rigidBody.freezeRotation = true; // Take manual control of rotation
 
         if (Input.GetKey(KeyCode.LeftArrow))
         {
-            transform.Rotate(Vector3.forward);
+            transform.Rotate(Vector3.forward * frameRotation);
         }
         else if (Input.GetKey(KeyCode.RightArrow))
         {
-            transform.Rotate(-Vector3.forward);
+            transform.Rotate(-Vector3.forward * frameRotation);
         }
 
         rigidBody.freezeRotation = false; // Resume physics control of rotation
