@@ -9,21 +9,24 @@ public class Spaceship : MonoBehaviour {
     AudioSource audioSource;
 
 	// Use this for initialization
-	void Start () {
+	void Start ()
+    {
         rigidBody = GetComponent<Rigidbody>();
         audioSource = GetComponent<AudioSource>();
 	}
 	
 	// Update is called once per frame
-	void Update () {
-        ProcessInput();
+	void Update ()
+    {
+        ApplyThrust();
+        RotateShip();
 	}
 
-    private void ProcessInput()
+    private void ApplyThrust()
     {
         if (Input.GetKey(KeyCode.Space))
         {
-            rigidBody.AddForce(Vector3.up);
+            rigidBody.AddRelativeForce(Vector3.up);
 
             if (!audioSource.isPlaying)
             {
@@ -34,6 +37,11 @@ public class Spaceship : MonoBehaviour {
         {
             audioSource.Stop();
         }
+    }
+
+    private void RotateShip()
+    {
+        rigidBody.freezeRotation = true; // Take manual control of rotation
 
         if (Input.GetKey(KeyCode.LeftArrow))
         {
@@ -43,5 +51,8 @@ public class Spaceship : MonoBehaviour {
         {
             transform.Rotate(-Vector3.forward);
         }
+
+        rigidBody.freezeRotation = false; // Resume physics control of rotation
     }
+
 }
