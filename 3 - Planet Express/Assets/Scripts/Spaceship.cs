@@ -11,21 +11,40 @@ public class Spaceship : MonoBehaviour {
     private float mainThrust = 1500f;
 
     private Rigidbody rigidBody;
-    private AudioSource audioSource;
+    private AudioSource[] audioSources;
 
 	// Use this for initialization
-	void Start ()
+	private void Start ()
     {
         rigidBody = GetComponent<Rigidbody>();
-        audioSource = GetComponent<AudioSource>();
+        audioSources = GetComponents<AudioSource>();
 	}
 	
 	// Update is called once per frame
-	void Update ()
+	private void Update ()
     {
         ApplyThrust();
         RotateShip();
 	}
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        switch (collision.gameObject.tag)
+        {
+            case "Friendly":
+                print("Ok");
+                break;
+            default:
+                print("Dead");
+
+                if (!audioSources[1].isPlaying)
+                {
+                    audioSources[1].Play();
+                }
+
+                break;
+        }
+    }
 
     private void ApplyThrust()
     {
@@ -35,14 +54,14 @@ public class Spaceship : MonoBehaviour {
         {
             rigidBody.AddRelativeForce(Vector3.up * frameThrust);
 
-            if (!audioSource.isPlaying)
+            if (!audioSources[0].isPlaying)
             {
-                audioSource.Play();
+                audioSources[0].Play();
             }
         }
         else
         {
-            audioSource.Stop();
+            audioSources[0].Stop();
         }
     }
 
