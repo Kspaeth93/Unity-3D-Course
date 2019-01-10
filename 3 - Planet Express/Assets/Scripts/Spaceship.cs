@@ -34,6 +34,15 @@ public class Spaceship : MonoBehaviour {
             case "Friendly":
                 print("Ok");
                 break;
+            case "Goal":
+                print("Win");
+
+                if (!audioSources[2].isPlaying)
+                {
+                    audioSources[2].Play();
+                }
+
+                break;
             default:
                 print("Dead");
 
