@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class Spaceship : MonoBehaviour {
@@ -13,67 +10,95 @@ public class Spaceship : MonoBehaviour {
 
     private Rigidbody rigidBody;
     private AudioSource[] audioSources;
+    private enum GameState { Playing, Dying, Winning };
+    private GameState gameState;
 
-    private bool isDead = false;
-    private bool isWinning = false;
-
-	// Use this for initialization
 	private void Start ()
     {
+        gameState = GameState.Playing;
         rigidBody = GetComponent<Rigidbody>();
         audioSources = GetComponents<AudioSource>();
 	}
 	
-	// Update is called once per frame
 	private void Update ()
     {
-        ApplyThrust();
-        RotateShip();
-
-        if (isDead && !audioSources[1].isPlaying)
+        if (gameState == GameState.Playing)
         {
-            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
-            isDead = false;
-        }
-
-        if (isWinning && !audioSources[2].isPlaying)
-        {
-            if (SceneManager.GetActiveScene().buildIndex == 0)
-            {
-                SceneManager.LoadScene(1);
-            }
-            isWinning = false;
+            ApplyThrust();
+            RotateShip();
         }
 	}
 
     private void OnCollisionEnter(Collision collision)
     {
-        switch (collision.gameObject.tag)
+        if (gameState == GameState.Playing)
         {
-            case "Friendly":
-                print("Ok");
-                break;
-            case "Goal":
-                print("Win");
+            switch (collision.gameObject.tag)
+            {
+                case "Friendly":
+                    break;
+                case "Goal":
+                    gameState = GameState.Winning;
+                    PlayLevelCompletedSound();
+                    Invoke("PlayNextLevel", 5f);
+                    break;
+                default:
+                    gameState = GameState.Dying;
+                    PlayDeathSound();
+                    Invoke("RestartCurrentLevel", 1f);
+                    break;
+            }
+        }
+    }
 
-                if (!audioSources[2].isPlaying)
-                {
-                    audioSources[2].Play();
-                    isWinning = true;
-                }
+    private void RotateShip()
+    {
+        float frameRotation = rcsThrust * Time.deltaTime;
+        rigidBody.freezeRotation = true; // Take manual control of rotation
 
+        if (Input.GetKey(KeyCode.LeftArrow))
+        {
+            transform.Rotate(Vector3.forward * frameRotation);
+        }
+        else if (Input.GetKey(KeyCode.RightArrow))
+        {
+            transform.Rotate(-Vector3.forward * frameRotation);
+        }
+
+        rigidBody.freezeRotation = false; // Resume physics control of rotation
+    }
+
+    private void PlayLevelCompletedSound()
+    {
+        if (!audioSources[2].isPlaying)
+        {
+            audioSources[2].Play();
+        }
+    }
+
+    private void PlayNextLevel()
+    {
+        switch (SceneManager.GetActiveScene().buildIndex)
+        {
+            case 0:
+                SceneManager.LoadScene(1);
                 break;
             default:
-                print("Dead");
-
-                if (!audioSources[1].isPlaying)
-                {
-                    audioSources[1].Play();
-                    isDead = true;
-                }
-
                 break;
         }
+    }
+
+    private void PlayDeathSound()
+    {
+        if (!audioSources[1].isPlaying)
+        {
+            audioSources[1].Play();
+        }
+    }
+
+    private void RestartCurrentLevel()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
     private void ApplyThrust()
@@ -93,23 +118,6 @@ public class Spaceship : MonoBehaviour {
         {
             audioSources[0].Stop();
         }
-    }
-
-    private void RotateShip()
-    {
-        float frameRotation = rcsThrust * Time.deltaTime;
-        rigidBody.freezeRotation = true; // Take manual control of rotation
-
-        if (Input.GetKey(KeyCode.LeftArrow))
-        {
-            transform.Rotate(Vector3.forward * frameRotation);
-        }
-        else if (Input.GetKey(KeyCode.RightArrow))
-        {
-            transform.Rotate(-Vector3.forward * frameRotation);
-        }
-
-        rigidBody.freezeRotation = false; // Resume physics control of rotation
     }
 
 }
