@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class Spaceship : MonoBehaviour {
 
@@ -12,6 +13,9 @@ public class Spaceship : MonoBehaviour {
 
     private Rigidbody rigidBody;
     private AudioSource[] audioSources;
+
+    private bool isDead = false;
+    private bool isWinning = false;
 
 	// Use this for initialization
 	private void Start ()
@@ -25,6 +29,21 @@ public class Spaceship : MonoBehaviour {
     {
         ApplyThrust();
         RotateShip();
+
+        if (isDead && !audioSources[1].isPlaying)
+        {
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+            isDead = false;
+        }
+
+        if (isWinning && !audioSources[2].isPlaying)
+        {
+            if (SceneManager.GetActiveScene().buildIndex == 0)
+            {
+                SceneManager.LoadScene(1);
+            }
+            isWinning = false;
+        }
 	}
 
     private void OnCollisionEnter(Collision collision)
@@ -40,6 +59,7 @@ public class Spaceship : MonoBehaviour {
                 if (!audioSources[2].isPlaying)
                 {
                     audioSources[2].Play();
+                    isWinning = true;
                 }
 
                 break;
@@ -49,6 +69,7 @@ public class Spaceship : MonoBehaviour {
                 if (!audioSources[1].isPlaying)
                 {
                     audioSources[1].Play();
+                    isDead = true;
                 }
 
                 break;
