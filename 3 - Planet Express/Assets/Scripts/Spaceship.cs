@@ -3,13 +3,17 @@ using UnityEngine.SceneManagement;
 
 public class Spaceship : MonoBehaviour {
 
-    [SerializeField]
-    private float rcsThrust = 250f;
-    [SerializeField]
-    private float mainThrust = 1500f;
+    [SerializeField] private float rcsThrust = 250f;
+    [SerializeField] private float mainThrust = 1500f;
+    [SerializeField] private AudioClip deathSound;
+    [SerializeField] private AudioClip winSound;
+    [SerializeField] private AudioClip thrustSound;
+    [SerializeField] private ParticleSystem deathParticles;
+    [SerializeField] private ParticleSystem winParticles;
+    [SerializeField] private ParticleSystem thrustParticles;
 
     private Rigidbody rigidBody;
-    private AudioSource[] audioSources;
+    private AudioSource audioSource;
     private enum GameState { Playing, Dying, Winning };
     private GameState gameState;
 
@@ -17,15 +21,15 @@ public class Spaceship : MonoBehaviour {
     {
         gameState = GameState.Playing;
         rigidBody = GetComponent<Rigidbody>();
-        audioSources = GetComponents<AudioSource>();
+        audioSource = GetComponent<AudioSource>();
 	}
 	
 	private void Update ()
     {
         if (gameState == GameState.Playing)
         {
-            ApplyThrust();
-            RotateShip();
+            ApplyMainThrust();
+            ApplyRCSThrust();
         }
 	}
 
@@ -38,20 +42,49 @@ public class Spaceship : MonoBehaviour {
                 case "Friendly":
                     break;
                 case "Goal":
-                    gameState = GameState.Winning;
-                    PlayLevelCompletedSound();
-                    Invoke("PlayNextLevel", 5f);
+                    ProcessWinSequence();
                     break;
                 default:
-                    gameState = GameState.Dying;
-                    PlayDeathSound();
-                    Invoke("RestartCurrentLevel", 1f);
+                    ProcessDeathSequence();
                     break;
             }
         }
     }
 
-    private void RotateShip()
+    private void ProcessWinSequence()
+    {
+        gameState = GameState.Winning;
+        PlayWinSound();
+        winParticles.Play();
+        thrustParticles.Stop();
+        Invoke("PlayNextLevel", 5f);
+    }
+
+    private void ProcessDeathSequence()
+    {
+        gameState = GameState.Dying;
+        PlayDeathSound();
+        deathParticles.Play();
+        thrustParticles.Stop();
+        Invoke("RestartCurrentLevel", 1f);
+    }
+
+    private void ApplyMainThrust()
+    {
+        if (Input.GetKey(KeyCode.Space))
+        {
+            rigidBody.AddRelativeForce(Vector3.up * mainThrust * Time.deltaTime);
+            PlayThrustSound();
+            thrustParticles.Play();
+        }
+        else
+        {
+            audioSource.Stop();
+            thrustParticles.Stop();
+        }
+    }
+
+    private void ApplyRCSThrust()
     {
         float frameRotation = rcsThrust * Time.deltaTime;
         rigidBody.freezeRotation = true; // Take manual control of rotation
@@ -68,31 +101,12 @@ public class Spaceship : MonoBehaviour {
         rigidBody.freezeRotation = false; // Resume physics control of rotation
     }
 
-    private void PlayLevelCompletedSound()
-    {
-        if (!audioSources[2].isPlaying)
-        {
-            audioSources[2].Play();
-        }
-    }
-
     private void PlayNextLevel()
     {
-        switch (SceneManager.GetActiveScene().buildIndex)
+        int currentBuildIndex = SceneManager.GetActiveScene().buildIndex;
+        if (currentBuildIndex < SceneManager.sceneCountInBuildSettings)
         {
-            case 0:
-                SceneManager.LoadScene(1);
-                break;
-            default:
-                break;
-        }
-    }
-
-    private void PlayDeathSound()
-    {
-        if (!audioSources[1].isPlaying)
-        {
-            audioSources[1].Play();
+            SceneManager.LoadScene(currentBuildIndex + 1);
         }
     }
 
@@ -101,22 +115,23 @@ public class Spaceship : MonoBehaviour {
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
-    private void ApplyThrust()
+    private void PlayWinSound()
     {
-        float frameThrust = mainThrust * Time.deltaTime;
+        audioSource.Stop();
+        audioSource.PlayOneShot(winSound);
+    }
 
-        if (Input.GetKey(KeyCode.Space))
-        {
-            rigidBody.AddRelativeForce(Vector3.up * frameThrust);
+    private void PlayDeathSound()
+    {
+        audioSource.Stop();
+        audioSource.PlayOneShot(deathSound);
+    }
 
-            if (!audioSources[0].isPlaying)
-            {
-                audioSources[0].Play();
-            }
-        }
-        else
+    private void PlayThrustSound()
+    {
+        if (!audioSource.isPlaying)
         {
-            audioSources[0].Stop();
+            audioSource.PlayOneShot(thrustSound);
         }
     }
 
